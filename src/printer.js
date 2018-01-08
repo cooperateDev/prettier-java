@@ -586,9 +586,6 @@ function printPackageDeclaration(node) {
 function printSingleVariableDeclaration(node) {
   const docs = [];
 
-  // Add modifiers like public, static, etc.
-  docs.push(printModifiers(node.modifiers));
-
   // Add type
   docs.push(printNode(node.type));
   docs.push(" ");

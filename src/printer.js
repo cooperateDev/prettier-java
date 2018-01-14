@@ -219,7 +219,6 @@ function printEnumDeclaration(node, path, print) {
   docs.push(concat(path.map(print, "bodyDeclarations")));
 
   // Add open curly bracelet for class/interface beginning
-  docs.push(softline);
   docs.push(hardline);
   docs.push("}");
 
@@ -250,24 +249,14 @@ function printMethodDeclaration(node, path, print) {
   const docs = [];
 
   const index = Number(path.getName());
-  // console.log("index", index);
-  // console.log(path.getParentNode().bodyDeclarations[0]);
+
+  // If method is first element in class, add extra line
   if (index === 0) {
     docs.push(hardline);
   }
   docs.push(hardline);
-  // // If first element or previous element is not a method
-  // if (
-  //   isPreviousElementLineEmptyOrMethodDeclaration(
-  //     path.getParentNode().bodyDeclarations,
-  //     index
-  //   )
-  // ) {
-  //   docs.push(hardline);
-  // }
-  // docs.push(hardline);
 
-  // Add marker annotations like @PostConstruct
+  // Add annotations
   docs.push(printAnnotations(path, print));
 
   docs.push(printMethodDeclarationStart(node, path, print));
@@ -1409,24 +1398,25 @@ function printLineEmpty(node, path) {
 
   const index = Number(path.getName());
 
-  // console.log("printLineEmpty");
-  // console.log(path.getParentNode().bodyDeclarations[index - 1]);
-  // console.log(node);
-  // console.log(path.getParentNode().bodyDeclarations[index + 1]);
-
   // If next element is not existing, do nothing
-  if (path.getParentNode().bodyDeclarations[index + 1] === undefined) {
-    // console.log("nothing");
+  if (
+    (path.getParentNode().node === "TypeDeclaration" &&
+      path.getParentNode().bodyDeclarations[index + 1] === undefined) ||
+    (path.getParentNode().node === "Block" &&
+      path.getParentNode().statements[index + 1] === undefined)
+  ) {
     return concat(docs);
   }
 
   // If next element is already empty line, do nothing
-  if (path.getParentNode().bodyDeclarations[index + 1].node === "LineEmpty") {
-    // console.log("nothing");
+  if (
+    (path.getParentNode().node === "TypeDeclaration" &&
+      path.getParentNode().bodyDeclarations[index + 1].node === "LineEmpty") ||
+    (path.getParentNode().node === "Block" &&
+      path.getParentNode().statements[index + 1].node === "LineEmpty")
+  ) {
     return concat(docs);
   }
-
-  // console.log("line");
 
   // Add line
   docs.push(hardline);

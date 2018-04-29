@@ -110,15 +110,9 @@ function printClassDeclaration(node, path, print) {
 
   // Add type parameters
   if (node.typeParameters) {
-    docs.push(
-      enclosedElementList(
-        path,
-        print,
-        "<",
-        path.call(print, "typeParameters"),
-        ">"
-      )
-    );
+    docs.push("<");
+    docs.push(path.call(print, "typeParameters"));
+    docs.push(">");
   }
 
   // Add extends class
@@ -164,15 +158,9 @@ function printInterfaceDeclaration(node, path, print) {
 
   // Add type parameters
   if (node.typeParameters) {
-    docs.push(
-      enclosedElementList(
-        path,
-        print,
-        "<",
-        path.call(print, "typeParameters"),
-        ">"
-      )
-    );
+    docs.push("<");
+    docs.push(path.call(print, "typeParameters"));
+    docs.push(">");
   }
 
   // Add extends class
@@ -627,15 +615,9 @@ function printGenericMethodDeclaration(node, path, print) {
   const docs = [];
 
   // Add typeParameters
-  docs.push(
-    enclosedElementList(
-      path,
-      print,
-      "<",
-      path.call(print, "typeParameters"),
-      ">"
-    )
-  );
+  docs.push("<");
+  docs.push(path.call(print, "typeParameters"));
+  docs.push(">");
   docs.push(" ");
 
   // Add methodDeclaration
@@ -645,13 +627,28 @@ function printGenericMethodDeclaration(node, path, print) {
 }
 
 function printFormalParameters(node, path, print) {
-  return enclosedElementList(
-    path,
-    print,
-    "(",
-    join(concat([",", line]), path.map(print, "parameters")),
-    ")"
-  );
+  const docs = [];
+
+  // Add open brace for method parameters
+  docs.push("(");
+
+  // Add parameters
+  if (node.parameters) {
+    docs.push(
+      indent(
+        concat([
+          softline,
+          join(concat([",", line]), path.map(print, "parameters"))
+        ])
+      )
+    );
+    docs.push(softline);
+  }
+
+  // Add open brace for method parameters
+  docs.push(")");
+
+  return group(concat(docs));
 }
 
 function printFormalParameter(node, path, print) {
@@ -735,7 +732,11 @@ function printExpressionStatement(node, path, print) {
 }
 
 function printCommaList(node, path, print) {
-  return join(concat([",", line]), path.map(print, "list"));
+  const docs = [];
+
+  docs.push(join(concat([",", line]), path.map(print, "list")));
+
+  return concat(docs);
 }
 
 function printAndList(node, path, print) {
@@ -777,9 +778,21 @@ function printIdentifierNameElement(node, path, print) {
 }
 
 function printIdentifierArguments(node, path, print) {
-  return group(
-    concat([path.call(print, "name"), argumentList(node, path, print)])
-  );
+  const docs = [];
+
+  // Add name
+  docs.push(path.call(print, "name"));
+
+  // Add open brace
+  docs.push("(");
+
+  // Add arguments
+  docs.push(path.call(print, "arguments"));
+
+  // Add close brace
+  docs.push(")");
+
+  return concat(docs);
 }
 
 function printForStatement(node, path, print) {
@@ -1368,9 +1381,19 @@ function printTypeType(node, path, print) {
 }
 
 function printTypeArguments(node, path, print) {
-  return node.value
-    ? enclosedElementList(path, print, "<", path.call(print, "value"), ">")
-    : concat(["<", ">"]);
+  const docs = [];
+
+  // Add less
+  docs.push("<");
+
+  if (node.value) {
+    docs.push(path.call(print, "value"));
+  }
+
+  // Add greater
+  docs.push(">");
+
+  return concat(docs);
 }
 
 function printClassOrInterfaceTypeElement(node, path, print) {
@@ -1407,16 +1430,16 @@ function printMethodInvocation(node, path, print) {
   // Add method name
   docs.push(path.call(print, "name"));
 
+  // Add open brace for method parameters
+  docs.push("(");
+
   // Add method parameters
-  docs.push(
-    enclosedElementList(
-      path,
-      print,
-      "(",
-      node.parameters ? path.call(print, "parameters") : concat([]),
-      ")"
-    )
-  );
+  if (node.parameters) {
+    docs.push(path.call(print, "parameters"));
+  }
+
+  // Add close brace for method parameters
+  docs.push(")");
 
   // Add dimensions
   docs.push(concat(path.map(print, "dimensions")));
@@ -1504,21 +1527,19 @@ function printIdentifier(node) {
 function printIdentifiers(node, path, print) {
   const docs = [];
 
-  if (!node.identifiers) {
+  if (!node.identifiers || node.identifiers.list.length !== 1) {
+    // Add open brace
     docs.push("(");
-    docs.push(")");
-  } else if (node.identifiers.list.length === 1) {
+  }
+
+  if (node.identifiers) {
+    // Add identifiers
     docs.push(path.call(print, "identifiers"));
-  } else {
-    docs.push(
-      enclosedElementList(
-        path,
-        print,
-        "(",
-        path.call(print, "identifiers"),
-        ")"
-      )
-    );
+  }
+
+  if (!node.identifiers || node.identifiers.list.length !== 1) {
+    // Add close brace
+    docs.push(")");
   }
 
   return concat(docs);
@@ -1565,19 +1586,32 @@ function printNumberLiteral(node) {
 }
 
 function printSimpleCreator(node, path, print) {
-  return concat([
-    "new",
-    " ",
-    path.call(print, "name"),
-    path.call(print, "rest")
-  ]);
+  const docs = [];
+
+  // Add new
+  docs.push("new");
+  docs.push(" ");
+
+  // Add name
+  docs.push(path.call(print, "name"));
+
+  // Add rest
+  docs.push(path.call(print, "rest"));
+
+  return concat(docs);
 }
 
 function printClassCreatorRest(node, path, print) {
   const docs = [];
 
+  // Add open brace
+  docs.push("(");
+
   // Add arguments
-  docs.push(argumentList(node, path, print));
+  docs.push(path.call(print, "arguments"));
+
+  // Add close brace
+  docs.push(")");
 
   // Add body
   if (node.body) {
@@ -1868,31 +1902,31 @@ function printTypeParameter(node, path, print) {
 }
 
 function printThis(node, path, print) {
-  return node.arguments
-    ? concat(["this", argumentList(node, path, print)])
-    : concat(["this"]);
+  const docs = [];
+
+  docs.push("this");
+
+  if (node.arguments) {
+    docs.push("(");
+    docs.push(path.call(print, "arguments"));
+    docs.push(")");
+  }
+
+  return concat(docs);
 }
 
 function printSuper(node, path, print) {
-  return node.arguments
-    ? concat(["super", argumentList(node, path, print)])
-    : concat(["super"]);
-}
+  const docs = [];
 
-function argumentList(node, path, print) {
-  return enclosedElementList(
-    path,
-    print,
-    "(",
-    path.call(print, "arguments"),
-    ")"
-  );
-}
+  docs.push("super");
 
-function enclosedElementList(path, print, prefix, element, suffix) {
-  return group(
-    concat([prefix, indent(concat([softline, element])), softline, suffix])
-  );
+  if (node.arguments) {
+    docs.push("(");
+    docs.push(path.call(print, "arguments"));
+    docs.push(")");
+  }
+
+  return concat(docs);
 }
 
 function printAnnotationTypeDeclaration(node, path, print) {
@@ -1937,17 +1971,23 @@ function printAnnotation(node, path, print) {
   docs.push("@");
   docs.push(path.call(print, "name"));
   if (node.hasBraces) {
-    docs.push(
-      enclosedElementList(
-        path,
-        print,
-        "(",
-        node.values
-          ? join(concat([",", line]), path.map(print, "values"))
-          : concat([]),
-        ")"
-      )
-    );
+    docs.push("(");
+    if (node.values) {
+      docs.push(
+        group(
+          concat([
+            indent(
+              concat([
+                softline,
+                join(concat([",", line]), path.map(print, "values"))
+              ])
+            ),
+            softline
+          ])
+        )
+      );
+    }
+    docs.push(")");
   }
   docs.push(hardline);
 

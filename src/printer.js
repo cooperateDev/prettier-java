@@ -525,7 +525,7 @@ function printEnumDeclaration(node, path, print) {
 
   docs.push(indent(concat(docs2)));
 
-  if (node.body.declarations.length > 0) {
+  if (node.body && node.body.declarations.length > 0) {
     // Add class body
     docs.push(path.call(print, "body"));
   } else {
@@ -709,6 +709,56 @@ function printBlock(node, path, print) {
 
   // Add close curly
   docs.push("}");
+
+  return concat(docs);
+}
+
+function printAssertStatement(node, path, print) {
+  const docs = [];
+
+  // If parent is block AND parent parent is LambdaExpression
+  // AND there is only one statement, don't print a hardline
+  if (
+    path.getParentNode(1).node !== "LAMBDA_EXPRESSION" ||
+    path.getParentNode().type !== "BLOCK" ||
+    path.getParentNode().statements.length > 1
+  ) {
+    // Add line
+    docs.push(hardline);
+  }
+
+  docs.push("assert");
+  docs.push(" ");
+
+  // Add booleanExpression
+  docs.push(path.call(print, "booleanExpression"));
+
+  if (node.valueExpression) {
+    docs.push(" ");
+    docs.push(":");
+    docs.push(" ");
+    // Add valueExpression
+    docs.push(path.call(print, "valueExpression"));
+  }
+
+  // If parent is block AND parent parent is LambdaExpression
+  // AND there is only one statement, don't print a semi colon
+  if (
+    path.getParentNode(1).node !== "LAMBDA_EXPRESSION" ||
+    path.getParentNode().type !== "BLOCK" ||
+    path.getParentNode().statements.length > 1
+  ) {
+    docs.push(";");
+  }
+
+  const index = Number(path.getName());
+  if (
+    node.followedEmptyLine &&
+    path.getParentNode().type === "BLOCK" &&
+    index + 1 < path.getParentNode().statements.length
+  ) {
+    docs.push(hardline);
+  }
 
   return concat(docs);
 }
@@ -1519,7 +1569,7 @@ function printOperatorExpression(node, path, print) {
 
   // operator
   docs.push(" ");
-  docs.push(node.operator);
+  docs.push(path.call(print, "operator"));
   docs.push(" ");
 
   // right
@@ -1531,14 +1581,18 @@ function printOperatorExpression(node, path, print) {
 function printParExpression(node, path, print) {
   const docs = [];
 
-  // Add open brace
-  docs.push("(");
+  if (path.getParentNode().type !== "ASSERT_STATEMENT") {
+    // Add open brace
+    docs.push("(");
+  }
 
   // Add expression
   docs.push(path.call(print, "expression"));
 
-  // Add close brace
-  docs.push(")");
+  if (path.getParentNode().type !== "ASSERT_STATEMENT") {
+    // Add close brace
+    docs.push(")");
+  }
 
   return concat(docs);
 }
@@ -1593,6 +1647,15 @@ function printBooleanLiteral(node) {
 
   // Add boolean value
   docs.push(node.value);
+
+  return concat(docs);
+}
+
+function printOperator(node) {
+  const docs = [];
+
+  // Add operator
+  docs.push(node.operator);
 
   return concat(docs);
 }
@@ -2289,6 +2352,9 @@ function printNode(node, path, print) {
     case "BLOCK": {
       return printBlock(node, path, print);
     }
+    case "ASSERT_STATEMENT": {
+      return printAssertStatement(node, path, print);
+    }
     case "EXPRESSION_STATEMENT": {
       return printExpressionStatement(node, path, print);
     }
@@ -2444,12 +2510,16 @@ function printNode(node, path, print) {
     case "BOOLEAN_LITERAL": {
       return printBooleanLiteral(node, path, print);
     }
+    case "OPERATOR": {
+      return printOperator(node, path, print);
+    }
     case "CHAR_LITERAL":
     case "STRING_LITERAL": {
       return printStringLiteral(node, path, print);
     }
     case "DECIMAL_LITERAL":
     case "FLOAT_LITERAL":
+    case "OCT_LITERAL":
     case "HEX_LITERAL": {
       return printNumberLiteral(node, path, print);
     }

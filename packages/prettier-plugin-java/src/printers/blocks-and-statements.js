@@ -8,14 +8,10 @@ class BlocksAndStatementPrettierVisitor {
   block(ctx) {
     const blockStatements = this.visit(ctx.blockStatements);
 
-    if (blockStatements) {
-      return rejectAndJoin(line, [
-        indent(rejectAndJoin(line, ["{", blockStatements])),
-        "}"
-      ]);
-    }
-
-    return "{}";
+    return rejectAndJoin(line, [
+      indent(rejectAndJoin(line, ["{", blockStatements])),
+      "}"
+    ]);
   }
 
   blockStatements(ctx) {
@@ -101,7 +97,11 @@ class BlocksAndStatementPrettierVisitor {
   assertStatement(ctx) {
     const expressions = this.mapVisit(ctx.expression);
 
-    return rejectAndConcat(["assert ", rejectAndJoin(" : ", expressions), ";"]);
+    return rejectAndJoin(" ", [
+      "assert",
+      rejectAndJoin(" : ", expressions),
+      ";"
+    ]);
   }
 
   switchStatement(ctx) {
@@ -180,8 +180,10 @@ class BlocksAndStatementPrettierVisitor {
     return rejectAndConcat([
       "for (",
       forInit,
-      rejectAndJoin(" ", [";", expression]),
-      rejectAndJoin(" ", [";", forUpdate]),
+      "; ",
+      expression,
+      "; ",
+      forUpdate,
       ") ",
       statement
     ]);
@@ -215,7 +217,7 @@ class BlocksAndStatementPrettierVisitor {
         localVariableType,
         variableDeclaratorId
       ]),
-      " : ",
+      ": ",
       expression,
       ") ",
       statement
@@ -274,7 +276,7 @@ class BlocksAndStatementPrettierVisitor {
     const catches = this.visit(ctx.catches);
     const finallyBlock = this.visit(ctx.finally);
 
-    return rejectAndJoin(" ", ["try", block, catches, finallyBlock]);
+    return rejectAndJoin(" ", ["try ", block, catches, finallyBlock]);
   }
 
   catches(ctx) {

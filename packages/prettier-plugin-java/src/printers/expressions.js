@@ -24,7 +24,7 @@ class ExpressionsPrettierVisitor {
     const lambdaParameters = this.visit(ctx.lambdaParameters);
     const lambdaBody = this.visit(ctx.lambdaBody);
 
-    return rejectAndJoin(" -> ", [lambdaParameters, lambdaBody]);
+    return rejectAndJoin(" => ", [lambdaParameters, lambdaBody]);
   }
 
   lambdaParameters(ctx) {
@@ -195,16 +195,13 @@ class ExpressionsPrettierVisitor {
   primarySuffix(ctx) {
     if (ctx.Dot) {
       if (ctx.This) {
-        return rejectAndConcat([".", "this"]);
+        return concat([".", "this"]);
       } else if (ctx.Identifier) {
         const typeArguments = this.visit(ctx.typeArguments);
-        return rejectAndConcat([".", typeArguments, ctx.Identifier[0].image]);
+        return join(" ", [typeArguments, ctx.Identifier[0].image]);
       }
 
-      const unqualifiedClassInstanceCreationExpression = this.visit(
-        ctx.unqualifiedClassInstanceCreationExpression
-      );
-      return rejectAndConcat([".", unqualifiedClassInstanceCreationExpression]);
+      return this.visit(ctx.unqualifiedClassInstanceCreationExpression);
     }
     return this.visitSingle(ctx);
   }
@@ -213,22 +210,15 @@ class ExpressionsPrettierVisitor {
     const fqnOrRefTypePart = this.mapVisit(ctx.fqnOrRefTypePart);
     const dims = this.visit(ctx.dims);
 
-    return rejectAndConcat([join(".", fqnOrRefTypePart), dims]);
+    return rejectAndJoin("", [join(".", fqnOrRefTypePart), dims]);
   }
 
   fqnOrRefTypePart(ctx) {
     const annotation = this.mapVisit(ctx.annotation);
 
-    let fqnOrRefTypePart$methodTypeArguments = "";
-    if (
-      ctx.$methodTypeArguments &&
-      ctx.$methodTypeArguments[0].children &&
-      ctx.$methodTypeArguments[0].children.typeArguments
-    ) {
-      fqnOrRefTypePart$methodTypeArguments = this.visit(
-        ctx.$methodTypeArguments
-      );
-    }
+    const fqnOrRefTypePart$methodTypeArguments = this.visit(
+      ctx.fqnOrRefTypePart$methodTypeArguments
+    );
 
     let keyWord = null;
     if (ctx.Identifier) {
@@ -237,22 +227,15 @@ class ExpressionsPrettierVisitor {
       keyWord = "super";
     }
 
-    let fqnOrRefTypePart$classTypeArguments = "";
-    if (
-      ctx.$classTypeArguments &&
-      ctx.$classTypeArguments[0].children &&
-      ctx.$classTypeArguments[0].children.typeArguments
-    ) {
-      fqnOrRefTypePart$classTypeArguments = this.visit(ctx.$classTypeArguments);
-    }
+    const fqnOrRefTypePart$classTypeArguments = this.visit(
+      ctx.fqnOrRefTypePart$classTypeArguments
+    );
 
     return rejectAndJoin(" ", [
       rejectAndJoin(" ", annotation),
-      rejectAndConcat([
-        fqnOrRefTypePart$methodTypeArguments,
-        keyWord,
-        fqnOrRefTypePart$classTypeArguments
-      ])
+      fqnOrRefTypePart$methodTypeArguments,
+      keyWord,
+      fqnOrRefTypePart$classTypeArguments
     ]);
   }
 
@@ -340,7 +323,7 @@ class ExpressionsPrettierVisitor {
 
     const typeArgumentsOrDiamond = this.visit(ctx.typeArgumentsOrDiamond);
 
-    return rejectAndConcat([
+    return rejectAndJoin(" ", [
       rejectAndJoin(".", segments),
       typeArgumentsOrDiamond
     ]);

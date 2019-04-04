@@ -24,7 +24,7 @@ class ExpressionsPrettierVisitor {
     const lambdaParameters = this.visit(ctx.lambdaParameters);
     const lambdaBody = this.visit(ctx.lambdaBody);
 
-    return rejectAndJoin(" => ", [lambdaParameters, lambdaBody]);
+    return rejectAndJoin(" -> ", [lambdaParameters, lambdaBody]);
   }
 
   lambdaParameters(ctx) {
@@ -120,7 +120,8 @@ class ExpressionsPrettierVisitor {
         segment.push(rejectAndJoin(" ", [token.image, expression.shift()]));
       } else if (
         i + 1 < sortedTokens.length &&
-        (sortedTokens[i + 1].image === ">" || sortedTokens[i + 1].image === "<")
+        ((sortedTokens[i].image === ">" && sortedTokens[i + 1].image === ">") ||
+          (sortedTokens[i].image === "<" && sortedTokens[i + 1].image === "<"))
       ) {
         // TODO: fix here by implementing print for s << 2, s >> 2 and s >>> 2
         // currently work only for s << 2 and s >> 2
@@ -195,13 +196,16 @@ class ExpressionsPrettierVisitor {
   primarySuffix(ctx) {
     if (ctx.Dot) {
       if (ctx.This) {
-        return concat([".", "this"]);
+        return rejectAndConcat([".", "this"]);
       } else if (ctx.Identifier) {
         const typeArguments = this.visit(ctx.typeArguments);
-        return join(" ", [typeArguments, ctx.Identifier[0].image]);
+        return rejectAndConcat([".", typeArguments, ctx.Identifier[0].image]);
       }
 
-      return this.visit(ctx.unqualifiedClassInstanceCreationExpression);
+      const unqualifiedClassInstanceCreationExpression = this.visit(
+        ctx.unqualifiedClassInstanceCreationExpression
+      );
+      return rejectAndConcat([".", unqualifiedClassInstanceCreationExpression]);
     }
     return this.visitSingle(ctx);
   }
@@ -210,15 +214,22 @@ class ExpressionsPrettierVisitor {
     const fqnOrRefTypePart = this.mapVisit(ctx.fqnOrRefTypePart);
     const dims = this.visit(ctx.dims);
 
-    return rejectAndJoin("", [join(".", fqnOrRefTypePart), dims]);
+    return rejectAndConcat([join(".", fqnOrRefTypePart), dims]);
   }
 
   fqnOrRefTypePart(ctx) {
     const annotation = this.mapVisit(ctx.annotation);
 
-    const fqnOrRefTypePart$methodTypeArguments = this.visit(
-      ctx.fqnOrRefTypePart$methodTypeArguments
-    );
+    let fqnOrRefTypePart$methodTypeArguments = "";
+    if (
+      ctx.$methodTypeArguments &&
+      ctx.$methodTypeArguments[0].children &&
+      ctx.$methodTypeArguments[0].children.typeArguments
+    ) {
+      fqnOrRefTypePart$methodTypeArguments = this.visit(
+        ctx.$methodTypeArguments
+      );
+    }
 
     let keyWord = null;
     if (ctx.Identifier) {
@@ -227,15 +238,22 @@ class ExpressionsPrettierVisitor {
       keyWord = "super";
     }
 
-    const fqnOrRefTypePart$classTypeArguments = this.visit(
-      ctx.fqnOrRefTypePart$classTypeArguments
-    );
+    let fqnOrRefTypePart$classTypeArguments = "";
+    if (
+      ctx.$classTypeArguments &&
+      ctx.$classTypeArguments[0].children &&
+      ctx.$classTypeArguments[0].children.typeArguments
+    ) {
+      fqnOrRefTypePart$classTypeArguments = this.visit(ctx.$classTypeArguments);
+    }
 
     return rejectAndJoin(" ", [
       rejectAndJoin(" ", annotation),
-      fqnOrRefTypePart$methodTypeArguments,
-      keyWord,
-      fqnOrRefTypePart$classTypeArguments
+      rejectAndConcat([
+        fqnOrRefTypePart$methodTypeArguments,
+        keyWord,
+        fqnOrRefTypePart$classTypeArguments
+      ])
     ]);
   }
 
@@ -323,7 +341,7 @@ class ExpressionsPrettierVisitor {
 
     const typeArgumentsOrDiamond = this.visit(ctx.typeArgumentsOrDiamond);
 
-    return rejectAndJoin(" ", [
+    return rejectAndConcat([
       rejectAndJoin(".", segments),
       typeArgumentsOrDiamond
     ]);

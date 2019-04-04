@@ -37,8 +37,7 @@ class ClassesPrettierVisitor {
 
     return rejectAndJoin(" ", [
       "class",
-      name,
-      optionalTypeParams,
+      rejectAndConcat([name, optionalTypeParams]),
       optionalSuperClasses,
       optionalSuperInterfaces,
       body
@@ -82,12 +81,17 @@ class ClassesPrettierVisitor {
 
   classBody(ctx) {
     const classBodyDecls = this.mapVisit(ctx.classBodyDeclaration);
-    return rejectAndConcat([
-      "{",
-      indent(rejectAndConcat([line, rejectAndJoin(line, classBodyDecls)])),
-      line,
-      "}"
-    ]);
+
+    if (classBodyDecls.length !== 0) {
+      return rejectAndConcat([
+        "{",
+        indent(rejectAndConcat([line, rejectAndJoin(line, classBodyDecls)])),
+        line,
+        "}"
+      ]);
+    }
+
+    return "{}";
   }
 
   classBodyDeclaration(ctx) {
@@ -193,7 +197,7 @@ class ClassesPrettierVisitor {
       } else {
         currentSegment.push(token.image);
         if (
-          (i + 1 < tokens.length && tokens[i].name !== "typeArguments") ||
+          (i + 1 < tokens.length && tokens[i + 1].name !== "typeArguments") ||
           i + 1 === tokens.length
         ) {
           segments.push(rejectAndConcat(currentSegment));
@@ -218,7 +222,10 @@ class ClassesPrettierVisitor {
     const header = this.visit(ctx.methodHeader);
     const body = this.visit(ctx.methodBody);
 
-    return rejectAndJoin(" ", [rejectAndJoin(" ", modifiers), header, body]);
+    return rejectAndConcat([
+      line,
+      rejectAndJoin(" ", [rejectAndJoin(" ", modifiers), header, body])
+    ]);
   }
 
   methodModifier(ctx) {
@@ -309,7 +316,7 @@ class ClassesPrettierVisitor {
       join(" ", variableModifier),
       unannType,
       join(" ", annotation),
-      "...",
+      "... ",
       identifier
     ]);
   }
@@ -359,11 +366,14 @@ class ClassesPrettierVisitor {
     const throws = this.visit(ctx.throws);
     const constructorBody = this.visit(ctx.constructorBody);
 
-    return rejectAndJoin(" ", [
-      join(" ", constructorModifier),
-      constructorDeclarator,
-      throws,
-      constructorBody
+    return rejectAndConcat([
+      line,
+      rejectAndJoin(" ", [
+        join(" ", constructorModifier),
+        constructorDeclarator,
+        throws,
+        constructorBody
+      ])
     ]);
   }
 
@@ -402,9 +412,13 @@ class ClassesPrettierVisitor {
     const blockStatements = this.visit(ctx.blockStatements);
 
     return rejectAndJoin(line, [
-      "{",
-      explicitConstructorInvocation,
-      blockStatements,
+      indent(
+        rejectAndJoin(line, [
+          "{",
+          explicitConstructorInvocation,
+          blockStatements
+        ])
+      ),
       "}"
     ]);
   }

@@ -8,14 +8,10 @@ class BlocksAndStatementPrettierVisitor {
   block(ctx) {
     const blockStatements = this.visit(ctx.blockStatements);
 
-    if (blockStatements) {
-      return rejectAndJoin(line, [
-        indent(rejectAndJoin(line, ["{", blockStatements])),
-        "}"
-      ]);
-    }
-
-    return "{}";
+    return rejectAndJoin(line, [
+      indent(rejectAndJoin(line, ["{", blockStatements])),
+      "}"
+    ]);
   }
 
   blockStatements(ctx) {

@@ -1,25 +1,19 @@
 "use strict";
 /* eslint-disable no-unused-vars */
 
-const {
-  concat,
-  join,
-  line,
-  ifBreak,
-  group,
-  indent
-} = require("prettier").doc.builders;
+const { concat, join, line, ifBreak, group } = require("prettier").doc.builders;
 const { rejectAndConcat, rejectAndJoin } = require("./printer-utils");
 
 class InterfacesPrettierVisitor {
   interfaceDeclaration(ctx) {
     const interfaceModifiers = this.mapVisit(ctx.interfaceModifier);
+
     const declaration = ctx.normalInterfaceDeclaration
       ? this.visit(ctx.normalInterfaceDeclaration)
       : this.visit(ctx.annotationTypeDeclaration);
 
     return rejectAndJoin(" ", [
-      rejectAndJoin(" ", interfaceModifiers),
+      rejectAndJoin(" ", [interfaceModifiers]),
       declaration
     ]);
   }
@@ -53,16 +47,12 @@ class InterfacesPrettierVisitor {
   }
 
   interfaceBody(ctx) {
-    const interfaceMemberDeclaration = this.mapVisit(
+    const interfaceMemberDeclaration = this.visit(
       ctx.interfaceMemberDeclaration
     );
 
-    return rejectAndConcat([
-      "{",
-      indent(
-        rejectAndConcat([line, rejectAndJoin(line, interfaceMemberDeclaration)])
-      ),
-      line,
+    return rejectAndJoin(line, [
+      rejectAndJoin(line, ["{", interfaceMemberDeclaration]),
       "}"
     ]);
   }
@@ -177,8 +167,8 @@ class InterfacesPrettierVisitor {
     const annoArgs = [];
     if (ctx.LBrace) {
       annoArgs.push("(");
-      if (ctx.elementValuePairList) {
-        annoArgs.push(this.visit(ctx.elementValuePairList));
+      if (ctx.elementValuePair) {
+        annoArgs.push(this.visit(ctx.elementValuePair));
       } else if (ctx.elementValue) {
         annoArgs.push(this.visit(ctx.elementValue));
       }
